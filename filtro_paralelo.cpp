@@ -31,11 +31,21 @@ Mat imageToMat(const Image& img) {
     return mat;
 }
 
-Kernel lerKernel(const string& caminho) {
-    Kernel kernel;
+pair<vector<vector<int>>, int>  lerKernel(const string& caminho) {
+    vector<vector<int>> kernel;
+    int normalizador = 1;
+
     ifstream file(caminho);
     string linha;
     while (getline(file, linha)) {
+        if (linha.empty()) continue;
+
+        if (linha.rfind("#norm", 0) == 0) {
+            istringstream ss(linha.substr(6));
+            ss >> normalizador;
+            continue;
+        }
+
         istringstream ss(linha);
         vector<int> row;
         int valor;
@@ -43,10 +53,11 @@ Kernel lerKernel(const string& caminho) {
             row.push_back(valor);
         kernel.push_back(row);
     }
-    return kernel;
+
+    return {kernel, normalizador};
 }
 
-Image aplicarFiltroParallel(const Image& input, const Kernel& kernel) {
+Image aplicarFiltroParallel(const Image& input, const Kernel& kernel, int normalizador) {
     int h = input.size(), w = input[0].size();
     int k = kernel.size();
     int offset = k / 2;
@@ -61,7 +72,8 @@ Image aplicarFiltroParallel(const Image& input, const Kernel& kernel) {
                     sum += input[y + i - offset][x + j - offset] * kernel[i][j];
                 }
             }
-            output[y][x] = min(max(sum, 0), 255);
+            int valor = sum / normalizador;
+            output[y][x] = min(max(valor, 0), 255);
         }
     }
     return output;
@@ -84,14 +96,14 @@ int main() {
         return 1;
     }
 
-    Kernel kernel = lerKernel(caminhoKernel);
+    auto[kernel, normalizador] = lerKernel(caminhoKernel);
     if (kernel.empty()) {
         cerr << "Erro ao ler kernel: " << caminhoKernel << endl;
         return 1;
     }
 
     Image img = matToImage(imagem);
-    Image filtrada = aplicarFiltroParallel(img, kernel);
+    Image filtrada = aplicarFiltroParallel(img, kernel, normalizador);
     Mat saida = imageToMat(filtrada);
 
     imwrite(caminhoSaida, saida);

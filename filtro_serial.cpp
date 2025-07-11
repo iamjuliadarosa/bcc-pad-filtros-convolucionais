@@ -37,17 +37,14 @@ pair<vector<vector<int>>, int> lerKernel(const string& caminho) {
     ifstream file(caminho);
     string linha;
     while (getline(file, linha)) {
-        // Ignora linhas vazias
         if (linha.empty()) continue;
 
-        // Se a linha começa com "#norm", extrai o fator
         if (linha.rfind("#norm", 0) == 0) {
-            istringstream ss(linha.substr(6)); // Pega depois de "#norm "
+            istringstream ss(linha.substr(6));
             ss >> normalizador;
             continue;
         }
 
-        // Caso contrário, é linha de matriz
         istringstream ss(linha);
         vector<int> row;
         int valor;
@@ -75,8 +72,6 @@ Image aplicarFiltroSerial(const Image& input, const Kernel& kernel, int normaliz
             }
             int valor = sum / normalizador;
             output[y][x] = min(max(valor, 0), 255);
-
-            //output[y][x] = min(max(sum, 0), 255);
         }
     }
     return output;
